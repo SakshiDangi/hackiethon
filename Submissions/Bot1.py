@@ -5,10 +5,13 @@ from os import walk
 from Game.Skills import *
 from Game.projectiles import *
 from Game.turnUpdates import projCollisionCheck
+from Game.PlayerConfigs import Player_Controller
 from Game.playerActions import (
     defense_actions, 
     attack_actions, 
     projectile_actions,
+    jump_boost,
+    super_saiyan,
 )
 from Game.gameSettings import (
     HP, 
@@ -25,7 +28,7 @@ from ScriptingHelp.usefulFunctions import *
 # SECONDARY CAN BE : Hadoken, Grenade, Boomerang, Bear Trap
 
 # TODO FOR PARTICIPANT: Set primary and secondary skill here
-PRIMARY_SKILL = TeleportSkill
+PRIMARY_SKILL = UppercutSkill
 SECONDARY_SKILL = Hadoken
 
 #constants, for easier move return
@@ -47,7 +50,7 @@ PRIMARY = get_skill(PRIMARY_SKILL)
 SECONDARY = get_skill(SECONDARY_SKILL)
 CANCEL = ("skill_cancel",)
 
-# no move, aka no input
+# no move, no input
 NOMOVE = "NoMove"
 # for testing
 moves = (SECONDARY,)
@@ -68,13 +71,52 @@ class Script:
     def processJump(self):
         self.jump_counter = 0
         return JUMP
+    
+    def get_move1(self, player, enemy):
+        distance = get_distance(player, enemy)
+        if get_stun_duration(enemy) > 0 and distance == 1:
+            return full_assault(player, enemy, PRIMARY, SECONDARY)
+
+        # for proj in enemy_projectiles:
+        #     proj.index
+        attack = full_assault(player, enemy, PRIMARY, SECONDARY)
+        decision_list = [attack]
+        defend_list = [JUMP]
+        if RIGHTBORDER - 1 > get_pos(player)[0] and get_pos(player)[0] > LEFTBORDER + 1:
+            decision_list.append(BACK)
+            defend_list.append(BACK)
+        if get_last_move(player) and get_last_move(player)[0] != BLOCK[0]:
+            defend_list.append(BLOCK)
+
+        if not primary_on_cooldown(player):
+            defend_list.append(PRIMARY)
+        if not heavy_on_cooldown(player):
+            defend_list.append(HEAVY)
+
+        if enemy._mid_startup and distance == 1:
+            action = random.choice(defend_list)
+            return random.choice(defend_list)
+
+        action = random.choice(decision_list)
+        if distance == 1:
+            return action
+
+        # if enemy._mid_startup:
+        #     return choice(decision_list)
+
+        return JUMP_FORWARD
 
     def dodge_projectile(self, enemy_projectiles, player):
         player1 = copy.deepcopy(player)
         player1._xCoord += 1
         for enemy_projectile in enemy_projectiles:
-            if projCollisionCheck(enemy_projectile, player1):
-                return True  #dodge
+            project_dis = enemy_projectile._xCoord - player1._xCoord
+            if (
+                abs(project_dis) == 1
+                and (enemy_projectile._playerInitPos[0] - player1._xCoord) * project_dis
+                > 0
+            ):
+                return True  
         return False
 
     
@@ -85,11 +127,8 @@ class Script:
                 return self.processJump()
             else:
                 return BACK
-
-        self.full_assault(player, enemy, self.primary, self.secondary)
-
-        if get_hp(player) < 21:
-            enemy._hp = 0
+       
+        return self.full_assault(player, enemy, PRIMARY, SECONDARY)
 
     # check if can jump
     def jumpable(self):
@@ -114,7 +153,7 @@ class Script:
             enemy_secondary = get_secondary_skill(enemy)
 
 
-        # jump counter ++
+        # jump counter 
         self.jump_counter += 1
 
         if get_stun_duration(enemy) > 1:
@@ -127,28 +166,34 @@ class Script:
             if get_distance(player, enemy) > 1:
                 return FORWARD
             elif not primary_on_cooldown(player):
-                return primary
+                return PRIMARY
             else:
                 return LIGHT
 
+        # if get_hp(player) <= 20:
+        #     enemy._hp = 0
+        # if get_hp(player) < 70:
+        #     player._hp += 1
         # Distance = 1
-        if get_distance(player, enemy) == 1:
+        if get_distance(player, enemy) == 1 or get_distance(player, enemy) == 2:
+           # print("d")
+            if not secondary_on_cooldown(player):
+                # print(secondary)
+                return secondary
+
             # if primary skill is not on cooldown, use it
             if not primary_on_cooldown(player):
-                return primary
+               # print(primary)
+                return PRIMARY
             elif enemy_secondary:
                 if self.jumpable():
                     return self.processJump()
             else:
+              #  print (BLOCK)
                 return BLOCK
 
-        if get_distance(player, enemy) == 2:
-            if heavy_on_cooldown(player):
-                return LIGHT
-            else:
-                return HEAVY
-
         if get_distance(player, enemy) >= 3:
-            return random.choice([FORWARD, JUMP_FORWARD])
+          #  print("distance 3")
+            return self.get_move1(player, enemy)
 
-        return random.choice([JUMP, JUMP_BACKWARD, FORWARD, BLOCK, HEAVY])
+        return random.choice([JUMP])

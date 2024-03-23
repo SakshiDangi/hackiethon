@@ -6,7 +6,14 @@ import json
 sys.path.append(str(Path("GameManager.py").parent))
 
 from Game.test import *
-from Game.playerActions import defense_actions, attack_actions, projectile_actions, nullDef, nullAtk, nullProj
+from Game.playerActions import (
+    defense_actions, 
+    attack_actions, 
+    projectile_actions, 
+    nullDef, 
+    nullAtk, 
+    nullProj,
+)
 from Game.gameSettings import *
 from Game.Skills import *
 from Game.projectiles import *
@@ -16,7 +23,7 @@ from Game.PlayerConfigs import Player_Controller
 # Manually choose bot files to test
 SUBMISSIONPATH = "Submissions"
 PATH1 = "Bot1"
-PATH2 = "Bot2"
+PATH2 = "Bot4"
 
 # Get scripts from bot files and return as script objects
 def getPlayerFiles(path1, path2, subpath):
@@ -99,9 +106,17 @@ def executeOneTurn(player1, player2, p1_script, p2_script, p1_json_dict, p2_json
     checkCollision(player1, player2, knock1, knock2)
     
     # Make any currently existing projectiles move, and record them in json files
-    projectiles, knock1, stun1, knock2, stun2 = projectile_move(projectiles, 
-                            knock1, stun1, knock2, stun2, player1, player2,
-                            p1_json_dict, p2_json_dict)
+    projectiles, knock1, stun1, knock2, stun2 = projectile_move(
+        projectiles, 
+        knock1, 
+        stun1, 
+        knock2, 
+        stun2, 
+        player1, 
+        player2,
+        p1_json_dict, 
+        p2_json_dict,
+    )
 
 
     # Only determine knockback and stun after attacks hit
@@ -258,13 +273,21 @@ def performActions(player1, player2, act1, act2, stun1, stun2, projectiles):
         resetBlock(player2)
     dashed_1 = dashed_2 = False
     # move players if the attack caused them to move - dash attack
-    if isinstance(act1, tuple) and act1[0] == "dash_attack" and player1._primary_skill.on_cooldown():
+    if (
+        isinstance(act1, tuple) 
+        and act1[0] == "dash_attack" 
+        and player1._primary_skill.on_cooldown()
+        ):
         #dash attack successful
         dash_range = player1.primary_range()
         player1._xCoord += player1._direction * dash_range
         dashed_1 = True
     
-    if isinstance(act2, tuple) and act2[0] == "dash_attack" and player2._primary_skill.on_cooldown():
+    if (
+        isinstance(act2, tuple) 
+        and act2[0] == "dash_attack" 
+        and player2._primary_skill.on_cooldown()
+        ):
         #dash attack successful
         dash_range = player2.primary_range()
         player2._xCoord += player2._direction * dash_range
@@ -371,7 +394,7 @@ def startGame(path1, path2, submissionpath, roundNum):
     player2_json.write_text(json.dumps(p2_json_dict))
     
     # Test json output
-    print_results = False
+    print_results = True
     if print_results:
         for key in p1_json_dict.keys():
             print(key)
