@@ -44,9 +44,10 @@ def checkCollision(player1, player2, knock1, knock2, check_midair = False):
     elif check_midair:
         # Check for midair players moving towards each other
         # If they end up face-to-face midair, set horizontal velocity to 0
-        if ((player1._yCoord == player2._yCoord) and 
-            (abs(player1._xCoord - player2._xCoord) == 1)
-            and (player1._direction != player2._direction)):
+        if ((player1._yCoord == player2._yCoord) 
+            and (abs(player1._xCoord - player2._xCoord) == 1)
+            and (player1._direction != player2._direction)
+        ):
             player1._velocity = 0
             player2._velocity = 0
                 
