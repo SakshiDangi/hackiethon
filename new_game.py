@@ -1,0 +1,1 @@
+print("heckiethon2024 project setup")
